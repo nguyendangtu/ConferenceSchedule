@@ -23,7 +23,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     private EnumSet<Constant.TALK_TYPE> STATIC_TALK_TYPE = EnumSet.of(Constant.TALK_TYPE.KEYNOTE,
             Constant.TALK_TYPE.LUNCH, Constant.TALK_TYPE.TEA, Constant.TALK_TYPE.CLOSING);
     private EnumSet<Constant.TALK_TYPE> DYNAMIC_TALK_TYPE = EnumSet.of(Constant.TALK_TYPE.WORKSHOP,
-            Constant.TALK_TYPE.REGULAR_TALK, Constant.TALK_TYPE.LIGHTNING);
+            Constant.TALK_TYPE.REGULAR_TALK, Constant.TALK_TYPE.LIGHTNING, Constant.TALK_TYPE.PANEL_DISCUSSION);
 
 
     @Override
@@ -81,7 +81,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                         isAdded[0] = true;
                     } else {
                         remainTalk.add(talk);
-                        isAdded[0] = true;
+                        //isAdded[0] = true;
                     }
                 }
             });

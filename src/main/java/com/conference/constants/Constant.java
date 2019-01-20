@@ -6,6 +6,6 @@ public interface Constant {
     String DAY = "Day ";
 
     enum TALK_TYPE {
-        KEYNOTE, WORKSHOP, REGULAR_TALK, LUNCH, TEA, LIGHTNING, CLOSING
+        KEYNOTE, WORKSHOP, REGULAR_TALK, LUNCH, TEA, LIGHTNING, PANEL_DISCUSSION, CLOSING
     }
 }
