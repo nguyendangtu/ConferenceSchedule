@@ -42,7 +42,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         List<GroupTalk> baseGroupTalk = createBaseGroupTalk(fixSchedule);
         List<GroupTalk> dynamicGroupTalks = createGroupTalks(fixSchedule);
-        addTalksToGroupTalks(dynamicSchedule, dynamicGroupTalks);
+        List<Talk> unavailableTalks = addTalksToGroupTalks(dynamicSchedule, dynamicGroupTalks);
         List<GroupTalk> groupTalks = new ArrayList<>();
         groupTalks.addAll(baseGroupTalk);
         groupTalks.addAll(dynamicGroupTalks);
@@ -53,6 +53,22 @@ public class ScheduleServiceImpl implements ScheduleService {
             System.out.println(k + " TRACK 1");
             v.forEach(System.out::println);
         });
+    }
+
+    @Override
+    public List<Talk> createBaseSchedule() throws IOException {
+        String filePath = eventConfiguration.getFilePath();
+        Map<String, Long> talkDuration = eventConfiguration.getTalk().getTalkDuration();
+        BiPredicate<Talk, Map<String, Long>> talkTypePredicate = (talk, map) -> map.get(talk.getType()) != null;
+        List<Talk> baseSchedule = new ArrayList<>();
+        baseSchedule.addAll(ScheduleUtil.getTalks(filePath).getValue());
+        baseSchedule.forEach(talk -> {
+            if (talkTypePredicate.test(talk, talkDuration)) {
+                talk.setScheduleTime(setScheduleTime(eventConfiguration, talk.getType()));
+            }
+        });
+        addLunchAndTeaToSchedule(eventConfiguration, baseSchedule);
+        return baseSchedule;
     }
 
     private Map<String, List<Talk>> createFinalSchedule(List<GroupTalk> groupTalks, List<Talk> talks) {
@@ -77,37 +93,42 @@ public class ScheduleServiceImpl implements ScheduleService {
         return finalSchedule;
     }
 
-    private void addTalksToGroupTalks(List<Talk> dynamicSchedule, List<GroupTalk> groupTalks) {
+    private List<Talk> addTalksToGroupTalks(List<Talk> dynamicSchedule, List<GroupTalk> groupTalks) {
         dynamicSchedule.sort((t1, t2) -> t1.getScheduleTime().getDuration() <= t2.getScheduleTime().getDuration() ? 1 : -1);
         Iterator iterator = dynamicSchedule.iterator();
         boolean isNext = true;
         Talk talk = null;
-        while (iterator.hasNext() || talk != null) {
+        List<Talk> unavailableTalks = new ArrayList<>();
+        while (iterator.hasNext()) {
             if (isNext) {
                 talk = (Talk) iterator.next();
                 isNext = false;
             }
-            for (int i = 0; i < groupTalks.size(); i++) {
-                long time = groupTalks.get(i).getAvailableTimes();
-                long total = groupTalks.get(i).getTotalTimes();
-                if (isNext) {
-                    if (iterator.hasNext()) {
-                        talk = (Talk) iterator.next();
-                        isNext = false;
-                    } else {
-                        break;
-                    }
-                }
-                if (talk != null && talk.getScheduleTime().getDuration() <= groupTalks.get(i).getAvailableTimes()) {
-                    groupTalks.get(i).setAvailableTimes(time - talk.getScheduleTime().getDuration());
-                    talk.getScheduleTime().setStartTime(groupTalks.get(i).getStartTime().plusMinutes(total - time));
+            for (GroupTalk groupTalk : groupTalks) {
+                long time = groupTalk.getAvailableTimes();
+                long total = groupTalk.getTotalTimes();
+                if (talk != null && talk.getScheduleTime().getDuration() <= groupTalk.getAvailableTimes()) {
+                    groupTalk.setAvailableTimes(time - talk.getScheduleTime().getDuration());
+
+                    talk.getScheduleTime().setStartTime(groupTalk.getStartTime().plusMinutes(total - time));
+
                     talk.getScheduleTime().setEndTime(talk.getScheduleTime().getStartTime().plusMinutes(talk.getScheduleTime().getDuration()));
-                    groupTalks.get(i).getTalks().add(talk);
+
+                    groupTalk.getTalks().add(talk);
+
                     isNext = true;
                     talk = null;
                 }
             }
+            if (talk != null) {
+                unavailableTalks.add(talk);
+                talk = null;
+                isNext = true;
+            }
         }
+
+        System.out.println(unavailableTalks);
+        return unavailableTalks;
     }
 
     private List<GroupTalk> createGroupTalks(List<Talk> fixSchedule) {
@@ -147,22 +168,6 @@ public class ScheduleServiceImpl implements ScheduleService {
         return scheduleTimes;
     }
 
-
-    @Override
-    public List<Talk> createBaseSchedule() throws IOException {
-        String filePath = eventConfiguration.getFilePath();
-        Map<String, Long> talkDuration = eventConfiguration.getTalk().getTalkDuration();
-        BiPredicate<Talk, Map<String, Long>> talkTypePredicate = (talk, map) -> map.get(talk.getType()) != null;
-        List<Talk> baseSchedule = new ArrayList<>();
-        baseSchedule.addAll(ScheduleUtil.getTalks(filePath).getValue());
-        baseSchedule.forEach(talk -> {
-            if (talkTypePredicate.test(talk, talkDuration)) {
-                talk.setScheduleTime(setScheduleTime(eventConfiguration, talk.getType()));
-            }
-        });
-        addLunchAndTeaToSchedule(eventConfiguration, baseSchedule);
-        return baseSchedule;
-    }
 
     private ScheduleTime setScheduleTime(EventConfiguration eventConfiguration, String talkType) {
         ScheduleTime scheduleTime;
