@@ -48,11 +48,27 @@ public class ScheduleServiceImpl implements ScheduleService {
         groupTalks.addAll(dynamicGroupTalks);
 
         Map<String, List<Talk>> schedule = createFinalSchedule(groupTalks, fixSchedule);
+        Map<String, List<Talk>> paralleSchedule = createParallelSchedule(unavailableTalks, fixSchedule);
 
         schedule.forEach((k, v) -> {
             System.out.println(k + " TRACK 1");
             v.forEach(System.out::println);
         });
+
+        paralleSchedule.forEach((k, v) -> {
+            System.out.println(k + " TRACK 1 Parallel");
+            v.forEach(System.out::println);
+        });
+    }
+
+    private Map<String, List<Talk>> createParallelSchedule(List<Talk> unavailableTalks, List<Talk> fixSchedule) {
+        List<GroupTalk> finalUnavailableGroupTalks = new ArrayList<>();
+        while (unavailableTalks.size() > 0) {
+            List<GroupTalk> unAvailableGroupTalks = createGroupTalks(fixSchedule);
+            unavailableTalks = addTalksToGroupTalks(unavailableTalks, unAvailableGroupTalks);
+            finalUnavailableGroupTalks.addAll(unAvailableGroupTalks);
+        }
+        return createFinalSchedule(finalUnavailableGroupTalks, fixSchedule);
     }
 
     @Override
