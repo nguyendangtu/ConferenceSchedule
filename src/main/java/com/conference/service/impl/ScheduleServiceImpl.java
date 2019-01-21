@@ -1,5 +1,6 @@
 package com.conference.service.impl;
 
+import com.conference.beans.GroupTalk;
 import com.conference.beans.ScheduleTime;
 import com.conference.beans.Talk;
 import com.conference.configurations.EventConfiguration;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.function.BiPredicate;
@@ -38,17 +40,103 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .filter(talk -> DYNAMIC_TALK_TYPE.contains(Constant.TALK_TYPE.valueOf(talk.getType())))
                 .collect(Collectors.toList());
 
-        Map<String, List<Talk>> schedule = createSchedule(fixSchedule);
-        List<ScheduleTime> timeband = createTimeBand(fixSchedule);
-        addDynamicScheduleToSchedule(schedule, dynamicSchedule, timeband);
+        List<GroupTalk> baseGroupTalk = createBaseGroupTalk(fixSchedule);
+        List<GroupTalk> dynamicGroupTalks = createGroupTalks(fixSchedule);
+        addTalksToGroupTalks(dynamicSchedule, dynamicGroupTalks);
+        List<GroupTalk> groupTalks = new ArrayList<>();
+        groupTalks.addAll(baseGroupTalk);
+        groupTalks.addAll(dynamicGroupTalks);
+
+        Map<String, List<Talk>> schedule = createFinalSchedule(groupTalks, fixSchedule);
 
         schedule.forEach((k, v) -> {
             System.out.println(k + " TRACK 1");
-            v.sort((t1, t2) -> t1.getScheduleTime().getStartTime().isAfter(t2.getScheduleTime().getStartTime()) ? 1 : -1);
             v.forEach(System.out::println);
         });
+    }
 
+    private Map<String, List<Talk>> createFinalSchedule(List<GroupTalk> groupTalks, List<Talk> talks) {
+        groupTalks.sort((t1, t2) -> t1.getStartTime().isAfter(t2.getStartTime()) ? 1 : -1);
+        Map<String, List<Talk>> finalSchedule = new HashMap<>();
+        for (int i = 0; i < getNumberOfDayByClosing(talks); i++) {
+            finalSchedule.put(Constant.DAY + (i + 1), new ArrayList<>());
+        }
+        for (int i = 0; i < groupTalks.size(); ) {
+            for (int j = 0; j < getNumberOfDayByClosing(talks); j++) {
+                if (i < groupTalks.size()) {
+                    finalSchedule.get(Constant.DAY + (j + 1)).addAll(groupTalks.get(i++).getTalks());
+                }
+            }
+        }
 
+        //sort
+        for (int i = 0; i < getNumberOfDayByClosing(talks); i++) {
+            finalSchedule.get(Constant.DAY + (i + 1)).sort((t1, t2) -> t1.getScheduleTime().getStartTime().isAfter(t2.getScheduleTime().getStartTime()) ? 1 : -1);
+        }
+
+        return finalSchedule;
+    }
+
+    private void addTalksToGroupTalks(List<Talk> dynamicSchedule, List<GroupTalk> groupTalks) {
+        dynamicSchedule.sort((t1, t2) -> t1.getScheduleTime().getDuration() <= t2.getScheduleTime().getDuration() ? 1 : -1);
+        Iterator iterator = dynamicSchedule.iterator();
+        boolean isNext = true;
+        Talk talk = null;
+        while (iterator.hasNext() || talk != null) {
+            if (isNext) {
+                talk = (Talk) iterator.next();
+                isNext = false;
+            }
+            for (int i = 0; i < groupTalks.size(); i++) {
+                long time = groupTalks.get(i).getAvailableTimes();
+                long total = groupTalks.get(i).getTotalTimes();
+                if (isNext) {
+                    if (iterator.hasNext()) {
+                        talk = (Talk) iterator.next();
+                        isNext = false;
+                    } else {
+                        break;
+                    }
+                }
+                if (talk != null && talk.getScheduleTime().getDuration() <= groupTalks.get(i).getAvailableTimes()) {
+                    groupTalks.get(i).setAvailableTimes(time - talk.getScheduleTime().getDuration());
+                    talk.getScheduleTime().setStartTime(groupTalks.get(i).getStartTime().plusMinutes(total - time));
+                    talk.getScheduleTime().setEndTime(talk.getScheduleTime().getStartTime().plusMinutes(talk.getScheduleTime().getDuration()));
+                    groupTalks.get(i).getTalks().add(talk);
+                    isNext = true;
+                    talk = null;
+                }
+            }
+        }
+    }
+
+    private List<GroupTalk> createGroupTalks(List<Talk> fixSchedule) {
+        List<GroupTalk> groupTalks = new ArrayList<>();
+        List<ScheduleTime> timeband = createTimeBand(fixSchedule);
+        long numberOfDays = getNumberOfDayByClosing(fixSchedule);
+        for (int i = 0; i < numberOfDays; i++) {
+            for (int j = 0; j < timeband.size() - 1; j++) {
+                GroupTalk groupTalk = new GroupTalk();
+                groupTalk.setStartTime(timeband.get(j).getEndTime());
+                groupTalk.setTotalTimes(Duration.between(timeband.get(j).getEndTime(), timeband.get(j + 1).getStartTime()).toMinutes());
+                groupTalk.setAvailableTimes(groupTalk.getTotalTimes());
+                groupTalks.add(groupTalk);
+            }
+        }
+        return groupTalks;
+    }
+
+    private List<GroupTalk> createBaseGroupTalk(List<Talk> staticSchedule) {
+        List<GroupTalk> groupTalks = new ArrayList<>();
+        staticSchedule.forEach(talk -> {
+            GroupTalk groupTalk = new GroupTalk();
+            groupTalk.setStartTime(talk.getScheduleTime().getStartTime());
+            groupTalk.setTotalTimes(talk.getScheduleTime().getDuration());
+            groupTalk.setAvailableTimes(groupTalk.getTotalTimes());
+            groupTalk.getTalks().add(talk);
+            groupTalks.add(groupTalk);
+        });
+        return groupTalks;
     }
 
     private List<ScheduleTime> createTimeBand(List<Talk> fixSchedule) {
@@ -59,46 +147,6 @@ public class ScheduleServiceImpl implements ScheduleService {
         return scheduleTimes;
     }
 
-    private void addDynamicScheduleToSchedule(Map<String, List<Talk>> schedule, List<Talk> dynamicSchedule, List<ScheduleTime> staticTimeBand) {
-        ScheduleTime keyNote = staticTimeBand.get(0);
-        ScheduleTime[] previous = new ScheduleTime[]{keyNote};
-        List<Talk> remainTalk = new ArrayList<>();
-        Iterator<Talk> dynamicIterator = dynamicSchedule.iterator();
-        while (dynamicIterator.hasNext()) {
-            Talk talk = dynamicIterator.next();
-            final boolean[] isAdded = new boolean[]{false};
-            schedule.forEach((key, value) -> {
-                if (!isAdded[0]) {
-                    if (!value.stream().anyMatch(item -> DYNAMIC_TALK_TYPE.contains(Constant.TALK_TYPE.valueOf(item.getType())))) {
-                        talk.getScheduleTime().setStartTime(keyNote.getEndTime());
-                        talk.getScheduleTime().setEndTime(keyNote.getEndTime().plusMinutes(talk.getScheduleTime().getDuration()));
-                        value.add(talk);
-                        isAdded[0] = true;
-                    } else if (ScheduleUtil.checkScheduleTime(previous[0], talk.getScheduleTime().getDuration(), staticTimeBand)) {
-                        talk.getScheduleTime().setStartTime(previous[0].getEndTime());
-                        talk.getScheduleTime().setEndTime(previous[0].getEndTime().plusMinutes(talk.getScheduleTime().getDuration()));
-                        value.add(talk);
-                        isAdded[0] = true;
-                    } else {
-                        remainTalk.add(talk);
-                        //isAdded[0] = true;
-                    }
-                }
-            });
-            if (isAdded[0]) {
-                previous[0] = talk.getScheduleTime();
-            }
-        }
-
-        schedule.forEach((k, v) -> {
-            System.out.println(k + " TRACK 1");
-            v.sort((t1, t2) -> t1.getScheduleTime().getStartTime().isAfter(t2.getScheduleTime().getStartTime()) ? 1 : -1);
-            v.forEach(System.out::println);
-        });
-        if (!remainTalk.isEmpty()) {
-            addDynamicScheduleToSchedule(schedule, remainTalk, staticTimeBand);
-        }
-    }
 
     @Override
     public List<Talk> createBaseSchedule() throws IOException {
@@ -135,31 +183,17 @@ public class ScheduleServiceImpl implements ScheduleService {
         return scheduleTime;
     }
 
-    private Map<String, List<Talk>> createSchedule(List<Talk> staticSchedule) {
-        Map<String, List<Talk>> schedule = new HashMap<>();
-        for (int i = 0; i < getNumberOfDayByKeyNote(staticSchedule); i++) {
-            List<Talk> items = new ArrayList<>();
-            staticSchedule.forEach(talk -> {
-                if (!items.stream().anyMatch(item -> item.getType().equalsIgnoreCase(talk.getType()))) {
-                    items.add(talk);
-                }
-            });
-            schedule.put(Constant.DAY + (i + 1), items);
-        }
-        return schedule;
-    }
-
     private void addLunchAndTeaToSchedule(EventConfiguration eventConfiguration, List<Talk> talks) {
-        long numberOfDays = getNumberOfDayByKeyNote(talks);
+        long numberOfDays = getNumberOfDayByClosing(talks);
         for (int i = 0; i < numberOfDays; i++) {
             talks.add(ScheduleUtil.getLunch(eventConfiguration));
             talks.add(ScheduleUtil.getTea(eventConfiguration));
         }
     }
 
-    private long getNumberOfDayByKeyNote(List<Talk> talks) {
+    private long getNumberOfDayByClosing(List<Talk> talks) {
         return talks.parallelStream()
-                .filter(talk -> Constant.TALK_TYPE.KEYNOTE.name().equalsIgnoreCase(talk.getType()))
+                .filter(talk -> Constant.TALK_TYPE.CLOSING.name().equalsIgnoreCase(talk.getType()))
                 .count();
     }
 

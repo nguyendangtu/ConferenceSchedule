@@ -43,22 +43,5 @@ public class ScheduleUtil {
         return lunch;
     }
 
-    public static boolean checkScheduleTime(ScheduleTime previousTime, long duration, List<ScheduleTime> timeband) {
-        LocalTime startTime = previousTime.getStartTime();
-        LocalTime endTime = startTime.plusMinutes(duration);
-        if (timeband.size() < 1) {
-            return false;
-        }
-        timeband.sort((t1, t2) -> t1.getStartTime().isAfter(t2.getStartTime()) ? 1 : -1);
-        for (int i = timeband.size() - 1; i > 0; i--) {
-            //if(st)
-            if (startTime.isBefore(timeband.get(i).getStartTime()) && startTime.isAfter(timeband.get(i - 1).getEndTime()) &&
-                    endTime.isBefore(timeband.get(i).getStartTime()) && endTime.isAfter(timeband.get(i - 1).getEndTime())) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
 }
