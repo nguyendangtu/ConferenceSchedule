@@ -1,10 +1,10 @@
 # CONFERENCE SCHEDULE
 
 Conference schedule provide service which is using for scheduling for any conference.
-Base on list of talks need to present in a conference, we group talks by two group.
+Base on list of talks need to present in a conference, we group talks by two groups.
 One is fix time group and another one is flexible time group. The service will provide the
-way to set time for talks in flexible group.
-After all talks already are scheduled, we combine fix time group and flexible group, then put to 
+way to set talks time in flexible group.
+After all talks already are scheduled, we combine fix time group and flexible group together, then put to 
 a Hashmap which having key is a day and value is all talks need to present in this day.
 
 ## SOLUTION
@@ -31,6 +31,7 @@ go to jars folder on command line:
 open web browser
 #### localhost:8080
 we can see all talks already scheduled. 
+
 ###2. Setup project
 Download ConferenceSchedule_John.zip and extract zip file to your local machine.
 go to ConferenceSchedule folder to build project.
