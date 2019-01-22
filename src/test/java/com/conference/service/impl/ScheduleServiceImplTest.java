@@ -18,6 +18,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -41,17 +42,73 @@ public class ScheduleServiceImplTest extends BaseTest {
             Constant.TALK_TYPE.PANEL_DISCUSSION);
 
     @Test
-    public void createSchedule() throws IOException {
-        scheduleService.createSchedule();
+    public void createSchedule_normal() throws IOException {
+        Map<String, List<Talk>> schedule = scheduleService.createSchedule();
+        Assert.assertNotNull(schedule);
+        Assert.assertEquals(2, schedule.values().size());
+        schedule.forEach((k, v) -> {
+            v.forEach(i -> {
+                Assert.assertNotNull(i.getType());
+                Assert.assertNotNull(i.getScheduleTime().getStartTime());
+                Assert.assertNotNull(i.getScheduleTime().getStartTime());
+                Assert.assertNotNull(i.getScheduleTime().getDuration());
+                Assert.assertTrue(LocalTime.parse(eventConfiguration.getFirstTalkTime()).isBefore(i.getScheduleTime().getStartTime()) ||
+                        LocalTime.parse(eventConfiguration.getFirstTalkTime()).equals(i.getScheduleTime().getStartTime()));
+                Assert.assertTrue(LocalTime.parse(eventConfiguration.getLastTalkTime()).isAfter(i.getScheduleTime().getStartTime()) ||
+                        LocalTime.parse(eventConfiguration.getLastTalkTime()).equals(i.getScheduleTime().getStartTime()));
+            });
+            for (int i = 0; i < v.size() - 1; i++) {
+                Assert.assertTrue(v.get(i).getScheduleTime().getEndTime().isBefore(v.get(i + 1).getScheduleTime().getStartTime()) ||
+                        v.get(i).getScheduleTime().getEndTime().equals(v.get(i + 1).getScheduleTime().getStartTime()));
+            }
+        });
     }
 
     @Test
-    public void createBaseSchedule() {
+    public void createBaseSchedule() throws IOException {
+        List<Talk> talks = scheduleService.createBaseSchedule();
+        Assert.assertNotNull(talks);
+        Assert.assertEquals(30, talks.size());
+        List<Talk> keyNotes = talks.parallelStream()
+                .filter(slot -> Constant.TALK_TYPE.KEYNOTE.name().equalsIgnoreCase(slot.getType()))
+                .collect(Collectors.toList());
+        Assert.assertEquals(2, keyNotes.size());
+
+        List<Talk> lunchs = talks.parallelStream()
+                .filter(slot -> Constant.TALK_TYPE.LUNCH.name().equalsIgnoreCase(slot.getType()))
+                .collect(Collectors.toList());
+        Assert.assertEquals(2, lunchs.size());
+
+        List<Talk> teas = talks.parallelStream()
+                .filter(slot -> Constant.TALK_TYPE.TEA.name().equalsIgnoreCase(slot.getType()))
+                .collect(Collectors.toList());
+        Assert.assertEquals(2, teas.size());
+
+        List<Talk> closing = talks.parallelStream()
+                .filter(slot -> Constant.TALK_TYPE.CLOSING.name().equalsIgnoreCase(slot.getType()))
+                .collect(Collectors.toList());
+        Assert.assertEquals(2, closing.size());
+
+        List<Talk> dynamicSchedule = talks.parallelStream()
+                .filter(slot -> DYNAMIC_TALK_TYPE.contains(Constant.TALK_TYPE.valueOf(slot.getType())))
+                .collect(Collectors.toList());
+        Assert.assertEquals(22, dynamicSchedule.size());
+
     }
 
     @Test
-    public void createFinalSchedule() {
-
+    public void createFinalSchedule_normal() throws IOException {
+        long numberOfClosing = 2;
+        List<Talk> baseSchedule = scheduleService.createBaseSchedule();
+        List<Talk> fixSchedule = baseSchedule.parallelStream()
+                .filter(slot -> STATIC_TALK_TYPE.contains(Constant.TALK_TYPE.valueOf(slot.getType())))
+                .collect(Collectors.toList());
+        Object[] args0 = new Object[]{fixSchedule};
+        List<GroupTalk> groupTalks = (List) invokdePrivateMethod(scheduleService, "createBaseGroupTalk", args0);
+        Object[] args = new Object[]{groupTalks, new ArrayList<>(), numberOfClosing};
+        Map<String, List<Talk>> schedule = (Map) invokdePrivateMethod(scheduleService, "createFinalSchedule", args);
+        Assert.assertEquals(numberOfClosing, schedule.values().size());
+        schedule.forEach((k, v) -> Assert.assertEquals(fixSchedule.size() / numberOfClosing, v.size()));
     }
 
     @Test

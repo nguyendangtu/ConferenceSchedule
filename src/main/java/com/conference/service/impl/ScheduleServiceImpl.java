@@ -84,7 +84,8 @@ public class ScheduleServiceImpl implements ScheduleService {
         List<GroupTalk> parallelGroupTalk = createParallelGroupTalk(leftTalks, fixSchedule);
 
         //Create final schedule which combine normal group talks and parallel group talks
-        Map<String, List<Talk>> schedule = createFinalSchedule(groupTalks, parallelGroupTalk, fixSchedule);
+        long numberOfClosing = getNumberOfDayByClosing(fixSchedule);
+        Map<String, List<Talk>> schedule = createFinalSchedule(groupTalks, parallelGroupTalk, numberOfClosing);
 
 
         schedule.forEach((k, v) -> {
@@ -126,10 +127,10 @@ public class ScheduleServiceImpl implements ScheduleService {
      * It will return a final schedule for a conference
      * @param groupTalks
      * @param parallelGroupTalk
-     * @param talks
+     * @param numberOfClosing
      * @return @HashMap<String,List<Talk>
      */
-    private Map<String, List<Talk>> createFinalSchedule(List<GroupTalk> groupTalks, List<GroupTalk> parallelGroupTalk, List<Talk> talks) {
+    private Map<String, List<Talk>> createFinalSchedule(List<GroupTalk> groupTalks, List<GroupTalk> parallelGroupTalk, long numberOfClosing) {
 
         //sort increase normal group talks base on start time
         groupTalks.sort((t1, t2) -> t1.getStartTime().isAfter(t2.getStartTime()) ? 1 : -1);
@@ -137,8 +138,6 @@ public class ScheduleServiceImpl implements ScheduleService {
         parallelGroupTalk.sort((t1, t2) -> t1.getStartTime().isAfter(t2.getStartTime()) ? 1 : -1);
 
         Map<String, List<Talk>> finalSchedule = new HashMap<>();
-
-        long numberOfClosing = getNumberOfDayByClosing(talks);
 
         //Init hashmap which contain all talks for a conference per day. Each item has key is label day and value is
         //all talks for this day
@@ -162,7 +161,7 @@ public class ScheduleServiceImpl implements ScheduleService {
             }
         }
 
-        //sort start for all talk for each day.
+        //sort increase stark time for all talk for per day.
         for (int i = 0; i < numberOfClosing; i++) {
             finalSchedule.get(Constant.DAY + (i + 1))
                     .sort((t1, t2) -> t1.getScheduleTime().getStartTime().isAfter(t2.getScheduleTime().getStartTime()) ? 1 : -1);
