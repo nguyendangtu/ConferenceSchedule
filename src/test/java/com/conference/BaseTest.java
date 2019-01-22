@@ -28,13 +28,13 @@ public abstract class BaseTest {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
     }
 
-    protected Object invokdePrivateMethod(Object object, String methodName, Object arg) {
+    protected Object invokdePrivateMethod(Object object, String methodName, Object[] args) {
         try {
             Method[] methods = object.getClass().getDeclaredMethods();
             for (Method method : methods) {
                 if (methodName.equalsIgnoreCase(method.getName())) {
                     method.setAccessible(true);
-                    return method.invoke(object, arg);
+                    return method.invoke(object, args);
                 }
             }
         } catch (IllegalAccessException e) {

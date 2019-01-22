@@ -307,7 +307,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                 scheduleTime = new ScheduleTime(startTime, startTime.plusMinutes(duration), duration);
                 break;
             case CLOSING:
-                scheduleTime = new ScheduleTime(closingTime, startTime.plusMinutes(duration), duration);
+                scheduleTime = new ScheduleTime(closingTime, closingTime.plusMinutes(duration), duration);
                 break;
             default:
                 scheduleTime = new ScheduleTime(null, null, duration);
