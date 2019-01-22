@@ -36,8 +36,4 @@ public class DateUtilTest {
         assertEquals(10, DateUtil.getDuration(startTime, endTime));
     }
 
-    @Test
-    public void doA(){
-        //Collections.sort();
-    }
 }

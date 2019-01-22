@@ -13,14 +13,30 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/***
+ * ScheduleUtil provide common static function for Schedule
+ */
 public class ScheduleUtil {
 
+    /**
+     * get all talks from input source file path
+     *
+     * @param src
+     * @return
+     * @throws IOException
+     */
     public static Talks getTalks(String src) throws IOException {
         ScheduleObjectMapper objectMapper = new ScheduleObjectMapper();
         return objectMapper.readValue(src, new TypeReference<Talks>() {
         });
     }
 
+    /**
+     * get tea
+     *
+     * @param eventConfiguration
+     * @return
+     */
     public static Talk getTea(EventConfiguration eventConfiguration) {
         LocalTime startTime = LocalTime.parse(eventConfiguration.getTea().getStartTime());
         LocalTime endTime = LocalTime.parse(eventConfiguration.getTea().getEndTime());
@@ -32,6 +48,12 @@ public class ScheduleUtil {
         return tea;
     }
 
+    /**
+     * get lunch
+     *
+     * @param eventConfiguration
+     * @return
+     */
     public static Talk getLunch(EventConfiguration eventConfiguration) {
         LocalTime startTime = LocalTime.parse(eventConfiguration.getLunch().getStartTime());
         LocalTime endTime = LocalTime.parse(eventConfiguration.getLunch().getEndTime());

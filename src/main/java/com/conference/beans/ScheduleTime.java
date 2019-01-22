@@ -6,6 +6,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
 
+/***
+ * Schedule time is using for store time for an event which have start time and duration
+ */
 @NoArgsConstructor
 @AllArgsConstructor
 @Data

@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.util.List;
 
+/***
+ * Talk is a main bean of a conference schedule, it will store a information for one meet up session.
+ */
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
@@ -22,10 +25,6 @@ public class Talk implements Serializable {
     private String title;
 
     private ScheduleTime scheduleTime;
-
-    private int dayIndex;
-
-    private int trackIndex;
 
     @Override
     public String toString() {
