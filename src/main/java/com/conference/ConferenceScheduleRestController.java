@@ -12,8 +12,7 @@ import java.util.Map;
 
 @RestController
 public class ConferenceScheduleRestController {
-    @Autowired
-    private EventConfiguration eventConfiguration;
+
     @Autowired
     private ScheduleService scheduleService;
 
