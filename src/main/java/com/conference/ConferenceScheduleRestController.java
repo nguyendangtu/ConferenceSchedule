@@ -17,7 +17,7 @@ public class ConferenceScheduleRestController {
     private ScheduleService scheduleService;
 
     @GetMapping("/")
-    public Map<String, List<Talk>> hello() throws Exception {
+    public Map<String, List<Talk>> createSchedule() throws Exception {
         return scheduleService.createSchedule();
     }
 }

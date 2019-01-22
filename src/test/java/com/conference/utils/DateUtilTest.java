@@ -1,32 +1,28 @@
 package com.conference.utils;
 
 import com.conference.beans.ScheduleTime;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.Date;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class DateUtilTest {
 
     @Test
     public void toHHmm() {
-        String startTime = "09:30:00";
+        String startTime = "09:30";
         String expectedResult = "09:30";
         assertEquals(expectedResult, DateUtil.toHHmm(LocalTime.parse(startTime)));
     }
 
     @Test
     public void toHHmmFromScheduleTime() {
-        String startTime = "09:30:00";
+        String startTime = "09:30";
         String expectedResult = "09:30";
         ScheduleTime scheduleTime = new ScheduleTime();
         scheduleTime.setStartTime(LocalTime.parse(startTime));
-        assertEquals(expectedResult, scheduleTime);
+        assertEquals(expectedResult, DateUtil.toHHmmFromScheduleTime(scheduleTime));
     }
 
     @Test

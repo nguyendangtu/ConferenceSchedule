@@ -8,7 +8,6 @@ import com.conference.configurations.EventConfiguration;
 import com.conference.constants.Constant;
 import com.conference.service.ScheduleService;
 import com.conference.utils.DateUtil;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +19,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static org.junit.Assert.*;
 
 public class ScheduleServiceImplTest extends BaseTest {
 
