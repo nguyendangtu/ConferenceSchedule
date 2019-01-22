@@ -32,7 +32,7 @@ open web browser
 #### localhost:8080
 we can see all talks already scheduled. 
 
-###2. Setup project
+ ###2. Setup project
 Download ConferenceSchedule_John.zip and extract zip file to your local machine.
 go to ConferenceSchedule folder to build project.
 #### build project: mvn clean install 
