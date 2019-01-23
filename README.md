@@ -17,25 +17,27 @@ we will create 3 group talks:
 The number of day in a conference is the number of Closing Talk. 
 If closing talk is 2, so group talk is 2 * 3 = 6.
 Each group talk will have start time, total time, available time and list of Talks.
-We Iterate all dynamic talks, then add it to 6 dynamic group talks if available time
-minus talk duration is greater than zero (available time - duration > 0).
+We sort increase base on talk durations, iterate all dynamic talks, then add it to 6 dynamic group talks
+from max duration to min duration, if available time minus talk duration is greater than zero (available time - duration > 0).
 When a talk is added to a group, available time we be decrease (available time = available time - duration)
 When a group talk is full, we will move to the next group talk. We loop all dynamic talk until all talks are scheduled.
 
 ## Getting Started 
 This project is running on Java 8 and Spring Boot version 2.0.1.RELEASE.
 Download ConferenceSchedule_John.zip and extract zip file to your local machine.
-###1. Execute jar file
-go to jars folder on command line: 
-#### java -jar Conference-Scheduler-1.0.jar
-open web browser
-#### localhost:8080
-we can see all talks already scheduled. 
-
- ###2. Setup project
+ 
+ ###1. Setup project
 Download ConferenceSchedule_John.zip and extract zip file to your local machine.
 go to ConferenceSchedule folder to build project.
 #### build project: mvn clean install 
-After after build successfully, we already download all dependency to your local.
+After after build successfully, jar file generated and all dependency already download to your local.
+ ###2. Execute jar file
+Create a new folder, copy Conference-Scheduler-1.0.jar and talks.json to this folder, open command line and execute the jar: 
+ #### java -jar Conference-Scheduler-1.0.jar
+open web browser
+ #### localhost:8080
+we can see all talks already scheduled.
+
+ ###3. View source code:
 Open Eclipse/Intelij to import the project. Navigate to com.conference.Application to run
 application.
